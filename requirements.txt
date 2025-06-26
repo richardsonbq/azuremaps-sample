@@ -1,0 +1,5 @@
+# requirements.txt for Flask Azure Maps App
+Flask
+requests
+python-dotenv
+gunicorn

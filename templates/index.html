@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Azure Maps - Cálculo de Rotas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(120deg, #e0eafc, #cfdef3 100%);
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 40px auto 0 auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 40px 40px 32px 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 1000px) {
+            .container {
+                flex-direction: row;
+                gap: 40px;
+                align-items: flex-start;
+            }
+            .form-section {
+                flex: 1 1 350px;
+                max-width: 400px;
+            }
+            .map-section {
+                flex: 2 1 600px;
+                min-width: 400px;
+            }
+            .debug-section {
+                flex: 1 1 400px;
+                min-width: 350px;
+                max-width: 500px;
+                background: #f7fafc;
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(26,115,232,0.07);
+                padding: 18px 18px 12px 18px;
+                margin-left: 0;
+                margin-top: 0;
+                display: none;
+            }
+            .debug-section.active {
+                display: block;
+            }
+        }
+        @media (max-width: 999px) {
+            .debug-section {
+                display: none !important;
+            }
+            .debug-section.active {
+                display: block !important;
+            }
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+        form label {
+            display: block;
+            margin-top: 18px;
+            color: #333;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            border: 1px solid #bcd0e5;
+            border-radius: 8px;
+            font-size: 1em;
+            background: #f7fafc;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border: 1.5px solid #1a73e8;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            margin-top: 28px;
+            padding: 12px;
+            background: linear-gradient(90deg, #1a73e8 60%, #67c6ff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(26,115,232,0.08);
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #1761c7 60%, #4bb3f7 100%);
+        }
+        .result {
+            margin-top: 24px;
+            font-size: 1.15em;
+            color: #222;
+            text-align: center;
+            min-height: 32px;
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            min-height: 350px;
+            margin-top: 28px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(26,115,232,0.07);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            color: #888;
+            font-size: 0.95em;
+        }
+        .debug-toggle {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1em;
+            color: #1a73e8;
+            user-select: none;
+        }
+        .debug-title {
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        .debug-raw {
+            font-family: 'Fira Mono', 'Consolas', monospace;
+            font-size: 0.98em;
+            background: #e9f1fb;
+            border-radius: 8px;
+            padding: 10px;
+            overflow-x: auto;
+            max-height: 500px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .info-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 12px 0 0 0;
+            font-size: 1.13em;
+            color: #1a73e8;
+            background: #f2f8fd;
+            border-radius: 7px;
+            padding: 8px 14px;
+            font-weight: 500;
+            box-shadow: 0 1px 4px rgba(26,115,232,0.04);
+        }
+        .info-icon {
+            font-size: 1.3em;
+            width: 28px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-section">
+            <h1>Azure Maps Rota & Consumo</h1>
+            <form id="routeForm" autocomplete="off">
+                <label>Origem:
+                    <input type="text" id="origin" required placeholder="Ex: São Paulo, SP" />
+                </label>
+                <label>Destino:
+                    <input type="text" id="destination" required placeholder="Ex: Rio de Janeiro, RJ" />
+                </label>
+                <label>Tipo de veículo:
+                    <select id="vehicle_type" required>
+                        <option value="combustão">Combustão</option>
+                        <option value="elétrico">Elétrico</option>
+                    </select>
+                </label>
+                <label id="efficiency_label">Consumo/Eficiência do veículo (km/l):
+                    <input type="number" id="efficiency" min="1" step="0.1" value="10" required placeholder="Ex: 10" />
+                </label>
+                <button type="submit">Calcular Rota</button>
+            </form>
+            <div class="debug-toggle">
+                <input type="checkbox" id="debugFlag" />
+                <label for="debugFlag">Debug</label>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+        <div class="map-section">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        // === Azure Maps Auth Config ===
+        // Only using subscription key auth now
+        let map;
+        const debugFlag = document.getElementById('debugFlag');
+        debugFlag.addEventListener('change', function() {
+            // Remove debug panel from UI
+        });
+        function formatInfoLine(icon, label, value, unit) {
+            return `<div class='info-line'><span class='info-icon'>${icon}</span> <span><b>${label}:</b> ${value} ${unit}</span></div>`;
+        }
+        const vehicleType = document.getElementById('vehicle_type');
+        const efficiencyLabel = document.getElementById('efficiency_label');
+        const efficiencyInput = document.getElementById('efficiency');
+        vehicleType.addEventListener('change', function() {
+            if (vehicleType.value === 'elétrico' || vehicleType.value === 'electric') {
+                efficiencyLabel.innerHTML = 'Eficiência do veículo elétrico (km/kWh):<input type="number" id="efficiency" min="1" step="0.1" required placeholder="Ex: 6" />';
+            } else {
+                efficiencyLabel.innerHTML = 'Consumo do veículo (km/l):<input type="number" id="efficiency" min="1" step="0.1" required placeholder="Ex: 10" />';
+            }
+        });
+        document.getElementById('routeForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const origin = document.getElementById('origin').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+            const vehicle_type = vehicleType.value;
+            const efficiency = document.getElementById('efficiency').value.trim();
+            let valid = true;
+            if (!origin || !destination) valid = false;
+            if (!efficiency || isNaN(efficiency) || Number(efficiency) <= 0) valid = false;
+            if (!valid) {
+                document.getElementById('result').textContent = 'Por favor, preencha todos os campos corretamente.';
+                return;
+            }
+            document.getElementById('result').textContent = 'Calculando...';
+            const body = {
+                origin,
+                destination,
+                vehicle_type,
+                efficiency,
+                debug: false,
+                traffic: true
+            };
+            try {
+                const resp = await fetch('/route', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    let html = '';
+                    html += formatInfoLine('🛣️', 'Distância', data.distance_km, 'km');
+                    html += formatInfoLine('⏱️', 'Tempo estimado', data.travel_time_min, 'min');
+                    if (vehicle_type === 'combustion' || vehicle_type === 'combustão') {
+                        html += formatInfoLine('⛽', 'Consumo estimado', data.fuel_liters !== null ? data.fuel_liters : 'N/A', 'litros');
+                    } else if (vehicle_type === 'electric' || vehicle_type === 'elétrico') {
+                        html += formatInfoLine('🔋', 'Energia estimada', data.energy_kwh, 'kWh');
+                    }
+                    document.getElementById('result').innerHTML = html;
+                    showRouteOnMap(data.coordinates);
+                } else {
+                    document.getElementById('result').textContent = data.error || 'Erro ao calcular rota.';
+                }
+            } catch (err) {
+                document.getElementById('result').textContent = 'Erro ao calcular rota.';
+            }
+        };
+        function showRouteOnMap(coords) {
+            // Always remove the map container and create a new one for a fresh map instance
+            const mapContainer = document.getElementById('map');
+            mapContainer.innerHTML = '';
+            let authOptions = { authType: 'subscriptionKey', subscriptionKey: '{{ azure_maps_key }}' };
+            map = new atlas.Map('map', {
+                center: coords[0].slice().reverse(),
+                zoom: 6,
+                authOptions: authOptions
+            });
+            map.events.add('ready', async function() {
+                drawRoute(coords);
+                await plotIncidents(coords);
+            });
+        }
+
+        async function plotIncidents(coords) {
+            if (!coords || coords.length === 0) return;
+            // Remove previous incident source/layer if present
+            if (map.sources && map.sources.getById('incidentSource')) {
+                map.sources.remove('incidentSource');
+            }
+            if (map.layers && map.layers.getLayerById('incidentLayer')) {
+                map.layers.remove('incidentLayer');
+            }
+            // Get bounding box for the route
+            let lats = coords.map(c => c[0]);
+            let lngs = coords.map(c => c[1]);
+            let minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            let minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+            // Validate bounding box values
+            if ([minLat, minLng, maxLat, maxLng].some(v => typeof v !== 'number' || isNaN(v) || !isFinite(v))) {
+                return; // Skip if any value is invalid
+            }
+            // Call backend API for incidents
+            const resp = await fetch('/incidents', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ min_lat: minLat, min_lng: minLng, max_lat: maxLat, max_lng: maxLng })
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data || !data.incidents || data.incidents.length === 0) return;
+
+            // Add incidents to map
+            const incidentSource = new atlas.source.DataSource('incidentSource');
+            map.sources.add(incidentSource);
+            data.incidents.forEach(incident => {
+                const coords = incident.coordinates;
+                incidentSource.add(new atlas.data.Feature(new atlas.data.Point([coords[0], coords[1]]), {
+                    title: incident.title || 'Incidente',
+                    description: incident.description || '',
+                    incidentType: incident.incidentType || '',
+                    severity: incident.severity || '',
+                    delay: incident.delay || '',
+                    startTime: incident.startTime || '',
+                    endTime: incident.endTime || '',
+                    isTrafficJam: incident.isTrafficJam ? 'Sim' : 'Não',
+                    isRoadClosed: incident.isRoadClosed ? 'Sim' : 'Não'
+                }));
+            });
+
+            // Add the symbol layer for incidents
+            map.layers.add(new atlas.layer.SymbolLayer(incidentSource, 'incidentLayer', {
+                iconOptions: {
+                    image: 'pin-round-red', // keep default red dot
+                    allowOverlap: true,
+                    size: 1.2
+                },
+                textOptions: { textField: ['get', 'title'], offset: [0, 1.8], color: '#d32f2f', size: 14 }
+            }));
+
+            // Restore simple custom popup for incident click
+            const incidentLayer = map.layers.getLayerById('incidentLayer');
+            const popup = new atlas.Popup();
+            if (incidentLayer) {
+                map.events.add('click', incidentLayer, function(e) {
+                    if (e.shapes && e.shapes.length > 0) {
+                        const props = e.shapes[0].getProperties();
+                        const coords = e.shapes[0].getCoordinates();
+                        if (!coords || typeof coords[0] !== 'number' || typeof coords[1] !== 'number') return;
+                        let html = `<div style='min-width:220px;max-width:340px;font-family:Roboto,Arial,sans-serif;background:linear-gradient(120deg,#fffbe7 60%,#e3f2fd 100%);border-radius:12px;box-shadow:0 4px 16px rgba(26,115,232,0.13);padding:16px 14px 12px 14px;color:#222;overflow-wrap:break-word;word-break:break-word;white-space:normal;'>`;
+                        html += `<div style='font-size:1.2em;font-weight:700;color:#d32f2f;margin-bottom:8px;display:flex;align-items:center;gap:8px;'><span style="font-size:1.5em;">⚠️</span> ${props.title || 'Incidente'}</div>`;
+                        if (props.description) html += `<div style='color:#444;margin-bottom:10px;'><span style='font-size:1.1em;'>📝</span> ${props.description}</div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Tipo:</b> <span style='color:#1976d2;'>${props.incidentType || ''}</span></div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Severidade:</b> <span style='color:#e65100;'>${props.severity || ''}</span></div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Atraso:</b> <span style='color:#b71c1c;'>${props.delay || 'N/A'}</span></div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Início:</b> <span style='color:#333;'>${props.startTime || ''}</span></div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Fim:</b> <span style='color:#333;'>${props.endTime || ''}</span></div>`;
+                        html += `<div style='margin-bottom:6px;'><b>Trânsito parado:</b> <span style='color:#c62828;'>${props.isTrafficJam}</span></div>`;
+                        html += `<div><b>Via fechada:</b> <span style='color:#c62828;'>${props.isRoadClosed}</span></div>`;
+                        html += `</div>`;
+                        popup.setOptions({
+                            position: coords,
+                            content: html
+                        });
+                        popup.open(map);
+                    }
+                });
+            }
+        }
+
+        function drawRoute(coords) {
+            // Always create a new DataSource and LineLayer for the new route
+            const routeLine = new atlas.source.DataSource();
+            map.sources.add(routeLine);
+            const line = new atlas.data.LineString(coords.map(c => [c[1], c[0]]));
+            routeLine.add(new atlas.data.Feature(line));
+            map.layers.add(new atlas.layer.LineLayer(routeLine, null, { strokeColor: '#1a73e8', strokeWidth: 5 }));
+            map.setCamera({ bounds: atlas.data.BoundingBox.fromData(line), padding: 40 });
+        }
+
+        // Remove custom warning icon registration and .popup-content CSS if not used elsewhere
+    </script>
+</body>
+</html>
