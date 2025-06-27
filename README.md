@@ -43,7 +43,7 @@ This is a sample Python Flask web application that demonstrates how to interact 
 
 You can deploy this app and all required Azure resources (including Azure Maps) using the Bicep template below.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Frichardsonbq%2Fazuremaps-sample%2Fmain%2Finfra%2Fmain.bicep)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Frichardsonbq%2Fazuremaps-sample%2Fmain%2Finfra%2Fmain.json)
 
 ### Bicep Deployment Steps
 1. Click the **Deploy to Azure** button above.
@@ -62,9 +62,9 @@ The `infra/main.bicep` file provisions:
 
 ---
 
-## Deploying Your Flask App Code to Azure Web App
+## Deploying Your App Code to Azure Web App
 
-After deploying the infrastructure with the Bicep template, you must deploy your Flask app code to the provisioned Azure Web App. Below are detailed instructions for deploying directly from your GitHub repository or using the Azure CLI.
+After deploying the infrastructure with the Bicep template, you must deploy your app code to the provisioned Azure Web App. Below are detailed instructions for deploying directly from your GitHub repository or using the Azure CLI.
 
 ### Option 1: Deploy from GitHub Repository (Recommended)
 1. Push your code to a public or private GitHub repository (e.g., `https://github.com/richardsonbq/azuremaps-sample.git`).
