@@ -6,7 +6,7 @@ param appLocation string = resourceGroup().location
 @allowed(['eastus','westus2','westeurope','northeurope','southeastasia','australiaeast','japaneast','uksouth','francecentral','germanywestcentral','brazilsouth','canadacentral','centralus','southcentralus','swedencentral','switzerlandnorth','uaenorth','norwayeast','koreacentral','indiacentral','polandcentral'])
 param mapsLocation string = 'eastus'
 param sku string = 'B1'
-param mapsSkuName string = 'S1'
+param mapsSkuName string = 'G2'
 
 resource maps 'Microsoft.Maps/accounts@2023-06-01' = {
   name: '${appName}-maps'
@@ -57,7 +57,12 @@ resource webapp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'FLASK_ENV'
           value: 'production'
         }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
       ]
+      appCommandLine: 'gunicorn --bind=0.0.0.0 --timeout 600 app:app'
     }
     httpsOnly: true
   }
