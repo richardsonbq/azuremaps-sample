@@ -1,4 +1,4 @@
-# Azure Maps Flask Sample Application
+# Azure Maps - Simple Sample Application
 
 This is a sample Python Flask web application that demonstrates how to interact with Azure Maps. The app allows users to calculate routes, estimate fuel or electric efficiency, and view real-time traffic incidents on a map.
 
@@ -43,7 +43,7 @@ This is a sample Python Flask web application that demonstrates how to interact 
 
 You can deploy this app and all required Azure resources (including Azure Maps) using the Bicep template below.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fyour-org%2FPOCAzureMaps%2Fmain%2Finfra%2Fmain.bicep)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Frichardsonbq%2Fazuremaps-sample%2Fmain%2Finfra%2Fmain.bicep)
 
 ### Bicep Deployment Steps
 1. Click the **Deploy to Azure** button above.
@@ -110,15 +110,12 @@ az webapp deployment source config --name <app-name> --resource-group <resource-
 ---
 
 ## Project Structure
-- `app.py` - Flask backend
-- `templates/index.html` - Main UI
+- `app.py` - Flask backend (APIs)
+- `templates/index.html` - Frontend
 - `requirements.txt` - Python dependencies
-- `infra/main.bicep` - Bicep IaC for Azure deployment
+- `infra/main.bicep` - Bicep Infra as Code for Azure resources deployment
 
 ## License
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). You are free to use, modify, and distribute this software with proper attribution. See the LICENSE file for details.
 
 ---
-
-**This sample demonstrates how to build and deploy a Python web app that interacts with Azure Maps, including route, efficiency, and incident calculations.**
-
